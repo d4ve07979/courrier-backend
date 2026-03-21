@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import tg.inseed.gestioncourrier.gestioncourrier.utilisateurs.UtilisateurRepository;
+
 /**
  * Service permettant la gestion des opérations CRUD sur les directions.
  * Ce service interagit avec {@link DirectionRepository} pour effectuer les opérations en base.
@@ -73,6 +75,10 @@ public class DirectionService {
         return directionRepository.save(direction);
     }
 
+    @Autowired
+    private UtilisateurRepository utilisateurRepository; // Ajouter dans DirectionService
+
+
     /**
      * Supprime une direction de la base de données.
      *
@@ -80,9 +86,20 @@ public class DirectionService {
      * @throws RuntimeException si la direction n’existe pas
      */
     public void deleteDirection(Long id) {
-        if (!directionRepository.existsById(id)) {
-            throw new RuntimeException("La direction avec l'id " + id + " n'existe pas.");
-        }
-        directionRepository.deleteById(id);
+    if (!directionRepository.existsById(id)) {
+        throw new RuntimeException("La direction avec l'id " + id + " n'existe pas.");
     }
+    
+    // 🆕 Vérifier si des utilisateurs sont affectés
+    long nbUtilisateurs = utilisateurRepository.countByDirection_IdDirection(id);
+    if (nbUtilisateurs > 0) {
+        throw new RuntimeException(
+            "Impossible de supprimer la direction : " + nbUtilisateurs + 
+            " utilisateur(s) y sont encore affecté(s)"
+        );
+    }
+    
+    directionRepository.deleteById(id);
+}
+  
 }

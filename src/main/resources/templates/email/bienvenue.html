@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bienvenue - Gestion des Courriers INSEED</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { background-color: #003366; padding: 20px; text-align: center; }
+        .header img { max-width: 220px; height: auto; }
+        .content { padding: 30px; }
+        .credentials { background-color: #f0f8ff; border-left: 4px solid #003366; padding: 15px; margin: 20px 0; font-family: monospace; }
+        .btn { display: inline-block; padding: 12px 28px; background-color: #003366; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <!-- Logo embarqué via CID -->
+        <img src="cid:logoInseed" alt="Logo INSEED" width="220" style="max-width: 220px; height: auto;" />
+        <h2 style="color: white; margin: 10px 0;">Institut National de la Statistique<br>et des Études Économiques et Démographiques</h2>
+    </div>
+
+    <div class="content">
+        <h3>Bonjour <span th:text="${prenom}"></span>,</h3>
+
+        <p>Votre compte sur la <strong>plateforme de gestion des courriers</strong> de l'INSEED a été créé avec succès.</p>
+
+        <p>Voici vos identifiants de connexion :</p>
+
+        <div class="credentials">
+            <strong>Email :</strong> <span th:text="${email}"></span><br/><br/>
+            <strong>Mot de passe temporaire :</strong> <span th:text="${motDePasse}"></span>
+        </div>
+
+        <p style="text-align: center;">
+            <a th:href="${loginUrl}" class="btn">Se connecter à la plateforme</a>
+        </p>
+
+        <p><strong>⚠️ Important :</strong> Pour des raisons de sécurité, veuillez <strong>changer votre mot de passe</strong> dès votre première connexion.</p>
+
+        <p>En cas de difficulté, contactez le service informatique.</p>
+
+        <p>Cordialement,<br/><strong>L'équipe informatique INSEED</strong></p>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 INSEED - Tous droits réservés</p>
+        <p>Cet email est envoyé automatiquement. Merci de ne pas y répondre.</p>
+    </div>
+</div>
+</body>
+</html>

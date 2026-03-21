@@ -1,89 +1,142 @@
 package tg.inseed.gestioncourrier.gestioncourrier.session;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Service permettant la gestion des opérations CRUD sur les sessions.
- * Ce service interagit avec {@link SessionRepository} pour effectuer les opérations en base.
- * 
- * @author KENKOU
- * @version 1.0
- * @since 10/2025
- */
+import tg.inseed.gestioncourrier.gestioncourrier.utilisateurs.Utilisateur;
+
 @Service
+@Transactional
 public class SessionService {
 
     @Autowired
-    private final SessionDataRepository sessionDataRepository;
+    private SessionDataRepository sessionDataRepository;
 
     /**
-     * Constructeur avec injection du repository
-     *
-     * @param sessionDataRepository Repository JPA pour l'entité Session
+     * 🆕 Créer une session lors de la connexion
      */
-    public SessionService(SessionDataRepository sessionDataRepository) {
-        this.sessionDataRepository = sessionDataRepository;
+    public Session creerSession(Utilisateur utilisateur, String tokenJwt, String adresseIp, String userAgent) {
+        Session session = new Session();
+        session.setUtilisateur(utilisateur);
+        session.setDateConnexion(LocalDateTime.now());
+        session.setTokenJwt(tokenJwt);
+        session.setAdresseIp(adresseIp);
+        session.setUserAgent(userAgent);
+        session.setActive(true);
+        
+        Session saved = sessionDataRepository.save(session);
+        
+        System.out.println("📱 Session créée : ID=" + saved.getIdSession() + 
+                         " pour " + utilisateur.getEmailUtilisateur());
+        
+        return saved;
     }
 
     /**
-     * Ajoute une nouvelle session à la base de données.
-     *
-     * @param session Objet représentant la session à créer
-     * @return La session ajoutée
+     * 🆕 Fermer une session lors de la déconnexion
      */
-    public Session createSession(Session session) {
-        return sessionDataRepository.save(session);
+    public void fermerSession(String tokenJwt) {
+        sessionDataRepository.findByTokenJwt(tokenJwt).ifPresent(session -> {
+            session.setDateDeconnexion(LocalDateTime.now());
+            session.setActive(false);
+            sessionDataRepository.save(session);
+            
+            System.out.println("🔚 Session fermée : ID=" + session.getIdSession());
+        });
     }
 
     /**
-     * Récupère la liste de toutes les sessions enregistrées.
-     *
-     * @return Liste complète des sessions
+     * 🆕 Fermer toutes les sessions actives d'un utilisateur
+     */
+    public void fermerToutesSessionsUtilisateur(Utilisateur utilisateur) {
+        List<Session> sessionsActives = sessionDataRepository.findByUtilisateurAndActiveTrue(utilisateur);
+        
+        sessionsActives.forEach(session -> {
+            session.setDateDeconnexion(LocalDateTime.now());
+            session.setActive(false);
+        });
+        
+        sessionDataRepository.saveAll(sessionsActives);
+        
+        System.out.println("🔚 " + sessionsActives.size() + " session(s) fermée(s) pour " + 
+                         utilisateur.getEmailUtilisateur());
+    }
+
+    /**
+     * Récupérer toutes les sessions
      */
     public List<Session> getAllSessions() {
         return sessionDataRepository.findAll();
     }
 
     /**
-     * Récupère une session par son identifiant.
-     *
-     * @param id Identifiant unique de la session
-     * @return La session correspondante
-     * @throws RuntimeException si aucune session n’est trouvée
+     * 🆕 Récupérer les sessions actives
+     */
+    public List<Session> getSessionsActives() {
+        return sessionDataRepository.findByActiveTrue();
+    }
+
+    /**
+     * 🆕 Récupérer les sessions d'un utilisateur
+     */
+    public List<Session> getSessionsUtilisateur(Utilisateur utilisateur) {
+        return sessionDataRepository.findByUtilisateur(utilisateur);
+    }
+
+    /**
+     * 🆕 Récupérer les sessions dans une période
+     */
+    public List<Session> getSessionsPeriode(LocalDateTime debut, LocalDateTime fin) {
+        return sessionDataRepository.findSessionsBetween(debut, fin);
+    }
+
+    /**
+     * Récupérer une session par ID
      */
     public Session getSessionById(Long id) {
         return sessionDataRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Session introuvable avec l'id: " + id));
+            .orElseThrow(() -> new RuntimeException("❌ Session introuvable avec l'id: " + id));
     }
 
     /**
-     * Met à jour les informations d’une session existante.
-     *
-     * @param id Identifiant de la session à modifier
-     * @param newSession Nouvelles données de la session
-     * @return La session mise à jour
+     * 🆕 Statistiques des sessions
      */
-    public Session updateSession(Long id, Session newSession) {
-        Session session = getSessionById(id);
-        session.setUtilisateur(newSession.getUtilisateur());
-        session.setDateConnexion(newSession.getDateConnexion());
-        session.setDateDeconnexion(newSession.getDateDeconnexion());
-        return sessionDataRepository.save(session);
+    public SessionStatistiques getStatistiques() {
+        SessionStatistiques stats = new SessionStatistiques();
+        stats.setTotalSessions(sessionDataRepository.count());
+        stats.setSessionsActives(sessionDataRepository.countByActiveTrue());
+        stats.setSessionsInactives(stats.getTotalSessions() - stats.getSessionsActives());
+        
+        return stats;
     }
 
     /**
-     * Supprime une session de la base de données.
-     *
-     * @param id Identifiant de la session à supprimer
-     * @throws RuntimeException si la session n’existe pas
+     * Supprimer une session
      */
     public void deleteSession(Long id) {
         if (!sessionDataRepository.existsById(id)) {
-            throw new RuntimeException("La session avec l'id " + id + " n'existe pas.");
+            throw new RuntimeException("❌ La session avec l'id " + id + " n'existe pas");
         }
         sessionDataRepository.deleteById(id);
+    }
+
+    // Classe interne pour les statistiques
+    public static class SessionStatistiques {
+        private long totalSessions;
+        private long sessionsActives;
+        private long sessionsInactives;
+
+        public long getTotalSessions() { return totalSessions; }
+        public void setTotalSessions(long totalSessions) { this.totalSessions = totalSessions; }
+        
+        public long getSessionsActives() { return sessionsActives; }
+        public void setSessionsActives(long sessionsActives) { this.sessionsActives = sessionsActives; }
+        
+        public long getSessionsInactives() { return sessionsInactives; }
+        public void setSessionsInactives(long sessionsInactives) { this.sessionsInactives = sessionsInactives; }
     }
 }

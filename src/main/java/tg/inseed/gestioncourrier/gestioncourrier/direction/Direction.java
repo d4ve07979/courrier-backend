@@ -60,6 +60,20 @@ public class Direction {
     @JsonProperty("descriptionDirection")
     private String descriptionDirection;
 
+    // ==================== NOUVEAUX CHAMPS UTILES ====================
+    @Column(name = "responsable", length = 150)
+    @JsonProperty("responsable")
+    private String responsable; // ex: "M. Koffi ADJALLAH"
+
+    @Column(name = "contact_telephone", length = 20)
+    @JsonProperty("contact_telephone")
+    private String contactTelephone; // ex: +22890123456
+
+    @Column(name = "email_direction", length = 100)
+    @JsonProperty("email_direction")
+    private String emailDirection; // ex: direction.generale@inseed.tg
+    // =================================================================
+
     /**
      * Direction affectéé
      */
@@ -68,16 +82,20 @@ public class Direction {
    @JsonIgnore
    private List <Affectation> affectation = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "id_utilisateur", nullable = false)
-    @JsonProperty("id_utilisateur")
-    private Utilisateur utilisateur;
+    /**
+     * Liste des utilisateurs de cette direction    
+     */
+    @OneToMany(mappedBy = "direction")
+    @JsonIgnore
+    private List<Utilisateur> utilisateurs = new ArrayList<>();
 
 
     /**
      * Constructeur sans argument requis par JPA
      */
     public Direction() {}
+
+    
 
     @Override
     public int hashCode() {
@@ -86,6 +104,8 @@ public class Direction {
         result = prime * result + ((idDirection == null) ? 0 : idDirection.hashCode());
         return result;
     }
+
+
 
     @Override
     public boolean equals(Object obj) {
@@ -104,11 +124,20 @@ public class Direction {
         return true;
     }
 
+
+
     @Override
     public String toString() {
         return "Direction [idDirection=" + idDirection + ", nomDirection=" + nomDirection + ", descriptionDirection="
-                + descriptionDirection + "]";
+                + descriptionDirection + ", responsable=" + responsable + ", contactTelephone=" + contactTelephone
+                + ", emailDirection=" + emailDirection + "]";
     }
 
+
+
+   
+
+
+   
     
 }

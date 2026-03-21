@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 10/2025
  */
 @RestController
-@RequestMapping("/api-destinataires")
+@RequestMapping("/api/destinataires")
 public class DestinataireController {
 
     @Autowired

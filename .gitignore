@@ -4,6 +4,17 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Logs
+logs/
+*.log
+
+# Fichiers uploadés par les utilisateurs
+uploads/
+
+# Variables d'environnement
+.env
+application-local.properties
+
 ### STS ###
 .apt_generated
 .classpath

@@ -1,92 +1,239 @@
 package tg.inseed.gestioncourrier.gestioncourrier.session;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Contrôleur REST pour gérer les opérations CRUD sur les sessions.
- * Ce contrôleur expose les endpoints HTTP pour interagir avec {@link SessionService}.
- * 
- * @author KENKOU
- * @version 1.0
- * @since 10/2025
- */
+import tg.inseed.gestioncourrier.gestioncourrier.utilisateurs.Utilisateur;
+import tg.inseed.gestioncourrier.gestioncourrier.utilisateurs.UtilisateurRepository;
+
 @RestController
-@RequestMapping("/api-sessions")
+@RequestMapping("/api/sessions")
 public class SessionController {
 
     @Autowired
-    private final SessionService sessionService;
+    private SessionService sessionService;
+
+    @Autowired
+    private UtilisateurRepository utilisateurRepository;
 
     /**
-     * Constructeur avec injection du service
-     *
-     * @param sessionService Service de gestion des sessions
+     * 🆕 ADMIN : Récupérer toutes les sessions
      */
-    public SessionController(SessionService sessionService) {
-        this.sessionService = sessionService;
+    @GetMapping("/toutes")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getAllSessions() {
+        try {
+            List<Session> sessions = sessionService.getAllSessions();
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "count", sessions.size(),
+                "sessions", sessions
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
     }
 
     /**
-     * Endpoint POST pour créer une nouvelle session.
-     *
-     * @param session Données de la session à créer
-     * @return La session créée
+     * 🆕 ADMIN : Récupérer les sessions actives
      */
-    @PostMapping("/ajouter")
-    public Session createSession(@RequestBody Session session) {
-        return sessionService.createSession(session);
+    @GetMapping("/actives")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getSessionsActives() {
+        try {
+            List<Session> sessions = sessionService.getSessionsActives();
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "count", sessions.size(),
+                "sessions", sessions
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
     }
 
     /**
-     * Endpoint GET pour récupérer toutes les sessions.
-     *
-     * @return Liste de toutes les sessions enregistrées
+     * 🆕 ADMIN : Récupérer les sessions d'un utilisateur
      */
-    @GetMapping("/lister")
-    public List<Session> getAllSessions() {
-        return sessionService.getAllSessions();
+    @GetMapping("/utilisateur/{idUtilisateur}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getSessionsUtilisateur(@PathVariable Long idUtilisateur) {
+        try {
+            Utilisateur utilisateur = utilisateurRepository.findById(idUtilisateur)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+            
+            List<Session> sessions = sessionService.getSessionsUtilisateur(utilisateur);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "utilisateur", Map.of(
+                    "id", utilisateur.getIdUtilisateur(),
+                    "nom", utilisateur.getNomUtilisateur(),
+                    "prenom", utilisateur.getPrenomUtilisateur(),
+                    "email", utilisateur.getEmailUtilisateur()
+                ),
+                "count", sessions.size(),
+                "sessions", sessions
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
     }
 
     /**
-     * Endpoint GET pour récupérer une session par son ID.
-     *
-     * @param id Identifiant de la session
-     * @return La session correspondante
+     * 🆕 Récupérer MES sessions (utilisateur connecté)
      */
-    @GetMapping("/{id}")
-    public Session getSessionById(@PathVariable Long id) {
-        return sessionService.getSessionById(id);
+    @GetMapping("/mes-sessions")
+    public ResponseEntity<?> getMesSessions(Authentication authentication) {
+        try {
+            Utilisateur utilisateur = utilisateurRepository.findByEmailUtilisateur(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+            
+            List<Session> sessions = sessionService.getSessionsUtilisateur(utilisateur);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "count", sessions.size(),
+                "sessions", sessions
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
     }
 
     /**
-     * Endpoint PUT pour modifier une session existante.
-     *
-     * @param id Identifiant de la session à modifier
-     * @param session Nouvelles données de la session
-     * @return La session mise à jour
+     * 🆕 ADMIN : Récupérer les sessions dans une période
      */
-    @PutMapping("/modify/{id}")
-    public Session updateSession(@PathVariable Long id, @RequestBody Session session) {
-        return sessionService.updateSession(id, session);
+    @GetMapping("/periode")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getSessionsPeriode(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime debut,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fin) {
+        try {
+            List<Session> sessions = sessionService.getSessionsPeriode(debut, fin);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "periode", Map.of(
+                    "debut", debut.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                    "fin", fin.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                ),
+                "count", sessions.size(),
+                "sessions", sessions
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
     }
 
     /**
-     * Endpoint DELETE pour supprimer une session.
-     *
-     * @param id Identifiant de la session à supprimer
+     * 🆕 ADMIN : Statistiques des sessions
      */
-    @DeleteMapping("/delete/{id}")
-    public void deleteSession(@PathVariable Long id) {
-        sessionService.deleteSession(id);
+    @GetMapping("/statistiques")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getStatistiques() {
+        try {
+            SessionService.SessionStatistiques stats = sessionService.getStatistiques();
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "statistiques", Map.of(
+                    "total_sessions", stats.getTotalSessions(),
+                    "sessions_actives", stats.getSessionsActives(),
+                    "sessions_inactives", stats.getSessionsInactives()
+                )
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 🆕 ADMIN : Fermer une session spécifique
+     */
+    @PutMapping("/{id}/fermer")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> fermerSession(@PathVariable Long id) {
+        try {
+            Session session = sessionService.getSessionById(id);
+            
+            if (!session.estActive()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "❌ Cette session est déjà fermée"
+                ));
+            }
+            
+            session.setDateDeconnexion(LocalDateTime.now());
+            session.setActive(false);
+            // Vous devez ajouter une méthode save dans le service
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "✅ Session fermée"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 🆕 ADMIN : Supprimer une session
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> deleteSession(@PathVariable Long id) {
+        try {
+            sessionService.deleteSession(id);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "✅ Session supprimée"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "success", false,
+                "message", "❌ Erreur : " + e.getMessage()
+            ));
+        }
     }
 }

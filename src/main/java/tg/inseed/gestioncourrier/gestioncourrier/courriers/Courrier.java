@@ -6,10 +6,14 @@ import java.util.List;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -26,8 +30,10 @@ import tg.inseed.gestioncourrier.gestioncourrier.affectation.Affectation;
 import tg.inseed.gestioncourrier.gestioncourrier.decharge.Decharge;
 import tg.inseed.gestioncourrier.gestioncourrier.destinataitre.Destinataire;
 import tg.inseed.gestioncourrier.gestioncourrier.expediteur.Expediteur;
+import tg.inseed.gestioncourrier.gestioncourrier.fichiers.FichierCourrier;
 import tg.inseed.gestioncourrier.gestioncourrier.statut.Statut;
 import tg.inseed.gestioncourrier.gestioncourrier.typeCourrier.TypeCourrier;
+import tg.inseed.gestioncourrier.gestioncourrier.utilisateurs.Utilisateur;
 
 
 @Entity
@@ -61,21 +67,29 @@ public class Courrier {
     @JsonProperty("date_reception")
     private Date dateReception;
 
+    
+    // 🆕 AJOUT : Utilisateur qui a créé le courrier
+    @ManyToOne
+    @JoinColumn(name = "id_createur")
+    @JsonProperty("createur")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Utilisateur createur;
+
     /**
      * Utilisateur expéditeur du courrier
      */
     @ManyToOne
     @JoinColumn(name = "id_expediteur", nullable = false)
     @JsonProperty("id_expediteur")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Expediteur expediteur;
 
     @ManyToOne
     @JoinColumn(name = "id_type_courrier", nullable = false)
     @JsonProperty("id_type_courrier")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private TypeCourrier typeCourrier;
     
-    
-
 
     /**
      * Utilisateur destinataire du courrier
@@ -83,6 +97,7 @@ public class Courrier {
     @ManyToOne
     @JoinColumn(name = "id_destinataire", nullable = false)
     @JsonProperty("id_destinataire")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Destinataire destinataire;
 
     /**
@@ -91,20 +106,30 @@ public class Courrier {
     @ManyToOne
     @JoinColumn(name = "id_statut", nullable = false)
     @JsonProperty("id_statut")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Statut statut;
 
     @ManyToOne
-    @JoinColumn(name = "id_fiche", nullable = false)
+    @JoinColumn(name = "id_fiche", nullable = true)
     @JsonProperty("id_fiche")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private FicheDeTransmission ficheDeTransmission;
 
     @OneToMany(mappedBy="courrier")
     @JsonIgnore
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private List <Decharge> decharge = new ArrayList<>();
 
-    @OneToMany(mappedBy = "courrier")
-    @JsonIgnore
+    @OneToMany(mappedBy = "courrier",fetch = FetchType.LAZY)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonManagedReference("courrier-affectation")  // ← Gère la sérialisation descendante
     private List <Affectation> affectation = new ArrayList<>();
+
+    @OneToMany(mappedBy = "courrier", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonManagedReference("courrier-fichier")  // ← Gère la sérialisation descendante
+    private List<FichierCourrier> fichiers = new ArrayList<>();
+
 
 
     /**

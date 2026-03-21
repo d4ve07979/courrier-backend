@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 10/2025
  */
 @RestController
-@RequestMapping("/api-expediteurs")
+@RequestMapping("/api/expediteurs")
 public class ExpediteurController {
 
     @Autowired

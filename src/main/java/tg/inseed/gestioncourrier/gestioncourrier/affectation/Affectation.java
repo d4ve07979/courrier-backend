@@ -2,6 +2,7 @@ package tg.inseed.gestioncourrier.gestioncourrier.affectation;
 
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
@@ -37,6 +38,7 @@ public class Affectation {
     @ManyToOne // Relation avec le courrier concerné
     @JoinColumn(name = "id_courrier", nullable = false)
     @JsonProperty("courrier")
+    @JsonBackReference("courrier-affectation")  // ← Empêche la boucle
     private Courrier courrier;
 
     @ManyToOne // Relation avec l’utilisateur affecté
@@ -45,9 +47,10 @@ public class Affectation {
     private Utilisateur utilisateur;
 
     @ManyToOne // Relation avec la direction concernée
-    @JoinColumn(name = "id_direction", nullable = false)
+    @JoinColumn(name = "id_direction", nullable = true)
     @JsonProperty("direction")
     private Direction direction;
+    
 
     @Column(name = "date_affectation", nullable = false)
     @JsonProperty("date_affectation")

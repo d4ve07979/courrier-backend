@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Permet de créer, consulter, modifier et supprimer les fiches.
  */
 @RestController // Indique que cette classe est un contrôleur REST
-@RequestMapping("/api-fichestransmission") // Préfixe des routes
+@RequestMapping("/api/fichestransmission") // Préfixe des routes
 public class FicheDeTransmissionController {
 
     @Autowired // Injection du service

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Réinitialisation de mot de passe - INSEED</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { background-color: #003366; padding: 20px; text-align: center; }
+        .header img { max-width: 220px; height: auto; }
+        .content { padding: 30px; }
+        .credentials { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; font-family: monospace; }
+        .btn { display: inline-block; padding: 12px 28px; background-color: #003366; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <!-- Logo embarqué via CID -->
+        <img src="cid:logoInseed" alt="Logo INSEED" width="220" style="max-width: 220px; height: auto;" />
+        <h2 style="color: white; margin: 10px 0;">INSEED - Gestion des Courriers</h2>
+    </div>
+
+    <div class="content">
+        <h3>Bonjour <span th:text="${prenom}"></span>,</h3>
+
+        <p>Votre mot de passe a été réinitialisé par un administrateur.</p>
+
+        <p>Voici votre nouveau mot de passe temporaire :</p>
+
+        <div class="credentials">
+            <strong>Mot de passe temporaire :</strong> <span th:text="${motDePasse}"></span>
+        </div>
+
+        <p style="text-align: center;">
+            <a th:href="${loginUrl}" class="btn">Se connecter maintenant</a>
+        </p>
+
+        <p><strong>⚠️ Sécurité :</strong> Vous <strong>devez changer ce mot de passe</strong> dès votre première connexion.</p>
+
+        <p>Si vous n'êtes pas à l'origine de cette demande, contactez immédiatement le service informatique.</p>
+
+        <p>Cordialement,<br/><strong>L'administration INSEED</strong></p>
+    </div>
+
+    <div class="footer">
+        <p>© 2025 INSEED - Tous droits réservés</p>
+    </div>
+</div>
+</body>
+</html>

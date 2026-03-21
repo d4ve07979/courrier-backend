@@ -164,7 +164,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Autorise toutes les origines (à restreindre en production)
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOrigins(List.of(
+    "https://courrier-frontend.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
+));
 
         // Méthodes HTTP autorisées
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
@@ -187,7 +191,7 @@ public class SecurityConfig {
         ));
 
         // Autorise l'envoi des cookies dans les requêtes cross-origin
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(false);
 
         // Durée de mise en cache des réponses CORS (en secondes)
         configuration.setMaxAge(3600L);

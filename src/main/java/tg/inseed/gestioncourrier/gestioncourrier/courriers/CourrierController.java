@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -89,6 +91,9 @@ public class CourrierController {
 
      @Autowired
     private StatutService statutService; // 🆕 AJOUT
+
+    @Autowired
+    private Cloudinary cloudinary;    
 
     @Autowired
     private NotificationService notificationService;
@@ -307,20 +312,27 @@ public ResponseEntity<?> createCourrierAvecFichier(
             ));
         }
 
-        // Sauvegarder le fichier
         String nomFichier = StringUtils.cleanPath(file.getOriginalFilename());
-        Path dossier = Paths.get(uploadDir, String.valueOf(savedCourrier.getIdCourrier()));
-        Files.createDirectories(dossier);
 
-        Path chemin = dossier.resolve(nomFichier);
-        Files.copy(file.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
+Map uploadResult = cloudinary.uploader().upload(
+    file.getBytes(),
+    ObjectUtils.asMap(
+        "folder", "courriers/" + savedCourrier.getIdCourrier(),
+        "resource_type", "raw",
+        "public_id", nomFichier
+    )
+);
 
-        // Enregistrer la référence du fichier
-        FichierCourrier fichier = new FichierCourrier();
-        fichier.setNomFichier(nomFichier);
-        fichier.setCheminFichier(chemin.toString());
-        fichier.setCourrier(savedCourrier);
-        fichierCourrierRepository.save(fichier);
+String urlCloudinary = (String) uploadResult.get("secure_url");
+String publicId = (String) uploadResult.get("public_id");
+
+FichierCourrier fichier = new FichierCourrier();
+fichier.setNomFichier(nomFichier);
+fichier.setCheminFichier(urlCloudinary);
+fichier.setUrlCloudinary(urlCloudinary);
+fichier.setPublicIdCloudinary(publicId);
+fichier.setCourrier(savedCourrier);
+fichierCourrierRepository.save(fichier);
 
         // 🆕 JOURNALISATION
         journalisationService.logCreation(
@@ -363,53 +375,46 @@ public ResponseEntity<?> createCourrierAvecFichier(
      * 🔐 SÉCURISÉ : Télécharger un fichier
      */
     @GetMapping("/fichier/{idFichier}/download")
-    public ResponseEntity<?> downloadFichier(
-            @PathVariable Long idFichier,
-            Authentication authentication) {
-        try {
-            String email = authentication.getName();
-            Utilisateur utilisateur = utilisateurRepository.findByEmailUtilisateur(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "❌ Utilisateur introuvable"));
+public ResponseEntity<?> downloadFichier(
+        @PathVariable Long idFichier,
+        Authentication authentication) {
+    try {
+        String email = authentication.getName();
+        Utilisateur utilisateur = utilisateurRepository.findByEmailUtilisateur(email)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "❌ Utilisateur introuvable"));
 
-            FichierCourrier fichier = fichierCourrierRepository.findById(idFichier)
-                .orElseThrow(() -> new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "❌ Fichier introuvable"));
+        FichierCourrier fichier = fichierCourrierRepository.findById(idFichier)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "❌ Fichier introuvable"));
 
-            // Vérifier l'accès au courrier associé
-            Long idCourrier = fichier.getCourrier().getIdCourrier();
-            if (!courrierService.utilisateurPeutAccederAuCourrier(idCourrier, utilisateur)) {
-                System.out.println("🔒 Tentative d'accès non autorisé au fichier " + idFichier + " par " + email);
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                    "success", false,
-                    "message", "🔒 Vous n'avez pas accès à ce fichier"
-                ));
-            }
-
-            Path chemin = Paths.get(fichier.getCheminFichier());
-            Resource resource = new UrlResource(chemin.toUri());
-
-            if (!resource.exists() || !resource.isReadable()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                    "success", false,
-                    "message", "❌ Fichier inaccessible"
-                ));
-            }
-
-            System.out.println("📥 Téléchargement autorisé : " + fichier.getNomFichier() + " par " + email);
-
-            return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, 
-                    "attachment; filename=\"" + fichier.getNomFichier() + "\"")
-                .body(resource);
-
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+        Long idCourrier = fichier.getCourrier().getIdCourrier();
+        if (!courrierService.utilisateurPeutAccederAuCourrier(idCourrier, utilisateur)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                 "success", false,
-                "message", "❌ Erreur lors du téléchargement"
+                "message", "🔒 Vous n'avez pas accès à ce fichier"
             ));
         }
+
+        String urlCloudinary = fichier.getUrlCloudinary() != null 
+            ? fichier.getUrlCloudinary() 
+            : fichier.getCheminFichier();
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "url_download", urlCloudinary,
+            "nom_fichier", fichier.getNomFichier()
+        ));
+
+    } catch (ResponseStatusException e) {
+        throw e;
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+            "success", false,
+            "message", "❌ Erreur : " + e.getMessage()
+        ));
     }
+}
 
     /**
      * Ajouter un fichier à un courrier existant
@@ -446,16 +451,26 @@ public ResponseEntity<?> createCourrierAvecFichier(
             }
 
             String nomFichier = StringUtils.cleanPath(file.getOriginalFilename());
-            Path dossier = Paths.get(uploadDir, String.valueOf(id));
-            Files.createDirectories(dossier);
-            Path chemin = dossier.resolve(nomFichier);
-            Files.copy(file.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
 
-            FichierCourrier fichier = new FichierCourrier();
-            fichier.setNomFichier(nomFichier);
-            fichier.setCheminFichier(chemin.toString());
-            fichier.setCourrier(courrier);
-            fichierCourrierRepository.save(fichier);
+Map uploadResult = cloudinary.uploader().upload(
+    file.getBytes(),
+    ObjectUtils.asMap(
+        "folder", "courriers/" + id,
+        "resource_type", "raw",
+        "public_id", nomFichier
+    )
+);
+
+String urlCloudinary = (String) uploadResult.get("secure_url");
+String publicId = (String) uploadResult.get("public_id");
+
+FichierCourrier fichier = new FichierCourrier();
+fichier.setNomFichier(nomFichier);
+fichier.setCheminFichier(urlCloudinary);
+fichier.setUrlCloudinary(urlCloudinary);
+fichier.setPublicIdCloudinary(publicId);
+fichier.setCourrier(courrier);
+fichierCourrierRepository.save(fichier);
 
             System.out.println("📎 Fichier ajouté au courrier " + id + " par " + email);
 
@@ -666,24 +681,33 @@ public ResponseEntity<?> createCourrierComplet(
         System.out.println("📧 Courrier créé : ID " + savedCourrier.getIdCourrier() + 
                          " (Type: " + savedCourrier.getTypeCourrier().getCode() + ")");
 
-        // 4️⃣ Sauvegarder le fichier si fourni
-        FichierCourrier fichierCourrier = null;
-        if (file != null && !file.isEmpty()) {
-            String nomFichier = StringUtils.cleanPath(file.getOriginalFilename());
-            Path dossier = Paths.get(uploadDir, String.valueOf(savedCourrier.getIdCourrier()));
-            Files.createDirectories(dossier);
+        // 4️⃣ Sauvegarder le fichier sur Cloudinary si fourni
+FichierCourrier fichierCourrier = null;
+if (file != null && !file.isEmpty()) {
+    String nomFichier = StringUtils.cleanPath(file.getOriginalFilename());
 
-            Path chemin = dossier.resolve(nomFichier);
-            Files.copy(file.getInputStream(), chemin, StandardCopyOption.REPLACE_EXISTING);
+    Map uploadResult = cloudinary.uploader().upload(
+        file.getBytes(),
+        com.cloudinary.utils.ObjectUtils.asMap(
+            "folder", "courriers/" + savedCourrier.getIdCourrier(),
+            "resource_type", "raw",
+            "public_id", nomFichier
+        )
+    );
 
-            fichierCourrier = new FichierCourrier();
-            fichierCourrier.setNomFichier(nomFichier);
-            fichierCourrier.setCheminFichier(chemin.toString());
-            fichierCourrier.setCourrier(savedCourrier);
-            fichierCourrierRepository.save(fichierCourrier);
+    String urlCloudinary = (String) uploadResult.get("secure_url");
+    String publicId = (String) uploadResult.get("public_id");
 
-            System.out.println("📎 Fichier enregistré : " + nomFichier);
-        }
+    fichierCourrier = new FichierCourrier();
+    fichierCourrier.setNomFichier(nomFichier);
+    fichierCourrier.setCheminFichier(urlCloudinary);
+    fichierCourrier.setUrlCloudinary(urlCloudinary);
+    fichierCourrier.setPublicIdCloudinary(publicId);
+    fichierCourrier.setCourrier(savedCourrier);
+    fichierCourrierRepository.save(fichierCourrier);
+
+    System.out.println("📎 Fichier enregistré sur Cloudinary : " + nomFichier);
+}
 
         // 🆕 JOURNALISATION
         journalisationService.logCreation(

@@ -1,6 +1,8 @@
 package tg.inseed.gestioncourrier.gestioncourrier.fichiers;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,6 +54,14 @@ public class FichierCourrier {
      */
     @Column(name = "chemin_fichier", nullable = false)
     private String cheminFichier;
+
+    @Column(name = "url_cloudinary", length = 500)
+    @JsonProperty("url_cloudinary")
+    private String urlCloudinary;
+
+    @Column(name = "public_id_cloudinary", length = 255)
+    @JsonProperty("public_id_cloudinary")
+    private String publicIdCloudinary;
 
     /**
      * Référence au courrier auquel ce fichier est lié

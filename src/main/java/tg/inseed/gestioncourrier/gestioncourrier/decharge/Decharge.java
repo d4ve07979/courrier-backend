@@ -70,12 +70,24 @@ public class Decharge {
     @JsonProperty("observation")
     private String observation;
 
+    /**
+     * Type de signature : "ELECTRONIQUE" ou "PHYSIQUE"
+     */
+    @Column(name = "type_signature", length = 20)
+    @JsonProperty("type_signature")
+    private String typeSignature;
+
+    /**
+     * Nom du signataire (pour une signature physique) ou nom de l'utilisateur connecté
+     */
+    @Column(name = "nom_signataire", length = 150)
+    @JsonProperty("nom_signataire")
+    private String nomSignataire;
 
     /**
      * Constructeur sans argument requis par JPA
      */
     public Decharge() {}
-
 
     @Override
     public int hashCode() {
@@ -84,7 +96,6 @@ public class Decharge {
         result = prime * result + ((id_decharge == null) ? 0 : id_decharge.hashCode());
         return result;
     }
-
 
     @Override
     public boolean equals(Object obj) {
@@ -103,13 +114,10 @@ public class Decharge {
         return true;
     }
 
-
     @Override
     public String toString() {
         return "Decharge [id_decharge=" + id_decharge + ", courrier=" + courrier + ", utilisateur=" + utilisateur
-                + ", dateSignature=" + dateSignature + ", observation=" + observation + "]";
+                + ", dateSignature=" + dateSignature + ", observation=" + observation
+                + ", typeSignature=" + typeSignature + ", nomSignataire=" + nomSignataire + "]";
     }
-
-    
-
 }

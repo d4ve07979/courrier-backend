@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import tg.inseed.gestioncourrier.gestioncourrier.courriers.Courrier;
+
 /**
  * Service permettant la gestion des opérations CRUD sur les décharges.
  * Ce service interagit avec {@link DechargeRepository} pour effectuer les opérations en base.
@@ -48,6 +50,16 @@ public class DechargeService {
     }
 
     /**
+     * Récupère toutes les décharges associées à un courrier donné.
+     *
+     * @param courrier Le courrier dont on veut les décharges
+     * @return Liste des décharges de ce courrier
+     */
+    public List<Decharge> getDechargesByCourrier(Courrier courrier) {
+        return dechargeRepository.findByCourrier(courrier);
+    }
+
+    /**
      * Récupère une décharge par son identifiant.
      *
      * @param id Identifiant unique de la décharge
@@ -72,6 +84,8 @@ public class DechargeService {
         decharge.setUtilisateur(newDecharge.getUtilisateur());
         decharge.setDateSignature(newDecharge.getDateSignature());
         decharge.setObservation(newDecharge.getObservation());
+        decharge.setTypeSignature(newDecharge.getTypeSignature());
+        decharge.setNomSignataire(newDecharge.getNomSignataire());
         return dechargeRepository.save(decharge);
     }
 

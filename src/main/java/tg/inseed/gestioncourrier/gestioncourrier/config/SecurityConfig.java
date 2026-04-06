@@ -110,7 +110,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/courriers/entrants/**").hasAnyRole("SECRETARIAT", "ADMIN")
                 .requestMatchers("/api/courriers/sortants/**").hasAnyRole("SECRETARIAT", "ADMIN")
                 .requestMatchers("/api/fiches-transmission/**").hasAnyRole("SECRETARIAT", "ADMIN")
-                .requestMatchers("/api/decharges/**").hasAnyRole("SECRETARIAT", "ADMIN")
+                
+                // ***** LIGNE MODIFIÉE CI-DESSOUS *****
+                .requestMatchers("/api/decharges/**").hasAnyRole("ADMIN", "SECRETARIAT", "DG", "DIRECTION", "DIVISION", "SERVICES")
+                // ***** FIN DE LA MODIFICATION *****
                 
                 // Routes DIRECTION, DIVISION, SERVICES
                 .requestMatchers("/api/courriers/traiter/**").hasAnyRole("DIRECTION", "ADMIN", "DIVISION")

@@ -655,7 +655,27 @@ public ResponseEntity<?> createCourrierComplet(
             .orElseThrow(() -> new RuntimeException("❌ Type courrier introuvable")));
         courrier.setStatut(statutRepository.findById(request.getIdStatut())
             .orElseThrow(() -> new RuntimeException("❌ Statut introuvable")));
-        
+
+        // ✅ NOUVEAUX CHAMPS — ajouter ici
+        if (request.getReferenceExterne() != null)
+            courrier.setReferenceExterne(request.getReferenceExterne());
+        if (request.getModeReception() != null)
+            courrier.setModeReception(request.getModeReception());
+        if (request.getModeEnvoi() != null)
+            courrier.setModeEnvoi(request.getModeEnvoi());
+        if (request.getDateDocument() != null)
+            courrier.setDateDocument(Date.valueOf(request.getDateDocument()));
+        if (request.getDateEnvoiPrevu() != null)
+            courrier.setDateEnvoiPrevu(Date.valueOf(request.getDateEnvoiPrevu()));
+        if (request.getDelaiReponse() != null)
+            courrier.setDelaiReponse(request.getDelaiReponse());
+        if (request.getConfidentialite() != null)
+            courrier.setConfidentialite(request.getConfidentialite());
+        if (request.getTags() != null)
+            courrier.setTags(request.getTags());
+        if (request.getDossierLie() != null)
+            courrier.setDossierLie(request.getDossierLie());
+
         // Associer la fiche si elle existe
         if (fiche != null) {
             courrier.setFicheDeTransmission(fiche);

@@ -1,9 +1,6 @@
 package tg.inseed.gestioncourrier.gestioncourrier.FicheDeTransmission;
 
-
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.Data;
 
 /**
@@ -97,15 +94,44 @@ public class CourrierCompletRequest {
     @JsonProperty("pourInformation")
     private boolean pourInformation;
     
-    @JsonProperty("aTouteFinUtile") // ✅ Correction ici
+    @JsonProperty("aTouteFinUtile")
     private boolean aTouteFinUtile;
     
     @JsonProperty("enInstance")
     private boolean enInstance;
     
-    @JsonProperty("aClasser") // ✅ Correction ici
+    @JsonProperty("aClasser")
     private boolean aClasser;
     
     @JsonProperty("courrierReserve")
     private boolean courrierReserve;
+
+    // ── Nouveaux champs enrichis ──────────────────────────────
+
+    @JsonProperty("referenceExterne")
+    private String referenceExterne;
+
+    @JsonProperty("dateDocument")
+    private String dateDocument; // Format: "2026-01-15"
+
+    @JsonProperty("modeReception")
+    private String modeReception;
+
+    @JsonProperty("modeEnvoi")
+    private String modeEnvoi;
+
+    @JsonProperty("dateEnvoiPrevu")
+    private String dateEnvoiPrevu; // Format: "2026-01-20"
+
+    @JsonProperty("delaiReponse")
+    private Integer delaiReponse;
+
+    @JsonProperty("confidentialite")
+    private String confidentialite;
+
+    @JsonProperty("tags")
+    private String tags;
+
+    @JsonProperty("dossierLie")
+    private String dossierLie;
 }

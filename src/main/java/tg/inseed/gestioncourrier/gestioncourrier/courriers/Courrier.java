@@ -35,13 +35,12 @@ import tg.inseed.gestioncourrier.gestioncourrier.statut.Statut;
 import tg.inseed.gestioncourrier.gestioncourrier.typeCourrier.TypeCourrier;
 import tg.inseed.gestioncourrier.gestioncourrier.utilisateurs.Utilisateur;
 
-
 @Entity
 @Getter
 @Setter
 @Table(name = "courrier")
 public class Courrier {
-/**
+    /**
      * Identifiant unique du courrier
      */
     @Id
@@ -67,7 +66,6 @@ public class Courrier {
     @JsonProperty("date_reception")
     private Date dateReception;
 
-    
     // 🆕 AJOUT : Utilisateur qui a créé le courrier
     @ManyToOne
     @JoinColumn(name = "id_createur")
@@ -89,7 +87,6 @@ public class Courrier {
     @JsonProperty("id_type_courrier")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private TypeCourrier typeCourrier;
-    
 
     /**
      * Utilisateur destinataire du courrier
@@ -109,28 +106,77 @@ public class Courrier {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Statut statut;
 
+    // ─── Nouveaux champs enrichis ─────────────────────────────────────────────
+
+    @Column(name = "reference_externe", length = 100)
+    @JsonProperty("reference_externe")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String referenceExterne;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name = "date_document")
+    @JsonProperty("date_document")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Date dateDocument;
+
+    @Column(name = "mode_reception", length = 50)
+    @JsonProperty("mode_reception")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String modeReception;
+
+    @Column(name = "mode_envoi", length = 50)
+    @JsonProperty("mode_envoi")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String modeEnvoi;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name = "date_envoi_prevu")
+    @JsonProperty("date_envoi_prevu")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Date dateEnvoiPrevu;
+
+    @Column(name = "delai_reponse")
+    @JsonProperty("delai_reponse")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer delaiReponse;
+
+    @Column(name = "confidentialite", length = 20)
+    @JsonProperty("confidentialite")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String confidentialite;
+
+    @Column(name = "tags", length = 500)
+    @JsonProperty("tags")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String tags;
+
+    @Column(name = "dossier_lie", length = 200)
+    @JsonProperty("dossier_lie")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String dossierLie;
+
+    // ─── Relations ────────────────────────────────────────────────────────────
+
     @ManyToOne
     @JoinColumn(name = "id_fiche", nullable = true)
     @JsonProperty("id_fiche")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private FicheDeTransmission ficheDeTransmission;
 
-    @OneToMany(mappedBy="courrier")
+    @OneToMany(mappedBy = "courrier")
     @JsonIgnore
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List <Decharge> decharge = new ArrayList<>();
+    private List<Decharge> decharge = new ArrayList<>();
 
-    @OneToMany(mappedBy = "courrier",fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "courrier", fetch = FetchType.LAZY)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonManagedReference("courrier-affectation")  // ← Gère la sérialisation descendante
-    private List <Affectation> affectation = new ArrayList<>();
+    @JsonManagedReference("courrier-affectation")
+    private List<Affectation> affectation = new ArrayList<>();
 
-    @OneToMany(mappedBy = "courrier", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "courrier", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonManagedReference("courrier-fichier")  // ← Gère la sérialisation descendante
+    @JsonManagedReference("courrier-fichier")
     private List<FichierCourrier> fichiers = new ArrayList<>();
-
-
 
     /**
      * Constructeur sans argument requis par JPA
@@ -164,6 +210,4 @@ public class Courrier {
         return "Courrier [idCourrier=" + idCourrier + ", objet=" + objet + ", dateReception=" + dateReception
                 + ", expediteur=" + expediteur + ", destinataire=" + destinataire + ", statut=" + statut + "]";
     }
-
-    
 }
